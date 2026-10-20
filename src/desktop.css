@@ -1,0 +1,225 @@
+/* =============================================================
+ * Pudiu Time 桌面版 · 桌面专属样式
+ * （基础样式来自 style.css，这里只补充桌面窗口与素材库相关 UI）
+ * ============================================================= */
+
+/* ---------- 通用 ---------- */
+.hidden { display: none !important; }
+
+.desktop-badge {
+  font-style: normal;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  margin-left: 8px;
+  border-radius: 20px;
+  color: #0a84ff;
+  background: rgba(10, 132, 255, 0.12);
+  border: 1px solid rgba(10, 132, 255, 0.35);
+  font-weight: 600;
+}
+
+/* ---------- 自绘标题栏 ---------- */
+.app-header { -webkit-app-region: drag; user-select: none; }
+.app-header .lang-dropdown-wrapper,
+.app-header .win-controls,
+.app-header .header-logo { -webkit-app-region: no-drag; }
+
+.header-right { display: flex; align-items: center; gap: 14px; }
+
+.win-controls { display: flex; gap: 6px; }
+.win-btn {
+  width: 32px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 8px; cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem; line-height: 1;
+  transition: all 0.2s ease;
+}
+.win-btn:hover { background: rgba(255, 255, 255, 0.18); }
+.win-btn.win-close:hover { background: #e0433a; color: #fff; }
+
+/* ---------- 快捷控制条 ---------- */
+.quick-controls .control-btn.active {
+  background: rgba(10, 132, 255, 0.85);
+  border-color: rgba(10, 132, 255, 0.9);
+}
+
+/* ---------- 素材库面板 ---------- */
+.library-panel {
+  position: absolute; top: 0; left: 0;
+  width: 430px; height: 100vh;
+  transform: translateX(-100%);
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 1900;
+  background: rgba(18, 18, 20, 0.9);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
+  padding: 25px 22px;
+  overflow-y: auto;
+  color: #f1f1f3;
+}
+.library-panel.open { transform: translateX(0); }
+.library-panel::-webkit-scrollbar { width: 6px; }
+.library-panel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 3px; }
+
+.lib-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.lib-title { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.5px; }
+.sidebar-close-btn {
+  background: transparent; border: none; color: rgba(255, 255, 255, 0.6);
+  font-size: 1.4rem; cursor: pointer; line-height: 1;
+}
+.sidebar-close-btn:hover { color: #fff; }
+
+.lib-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.lib-count { font-size: 0.72rem; color: rgba(255, 255, 255, 0.55); }
+
+.btn-primary {
+  border: none; border-radius: 10px; cursor: pointer;
+  padding: 9px 16px; font-size: 0.82rem; font-weight: 600;
+  background: linear-gradient(135deg, #0a84ff, #0060df);
+  color: #fff;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(10, 132, 255, 0.35); }
+
+.btn-ghost {
+  width: 100%; margin: 8px 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.85);
+  padding: 9px 14px; font-size: 0.8rem; cursor: pointer; text-align: center;
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
+
+.lib-section-title {
+  font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45); margin: 14px 0 10px;
+}
+
+.lib-list { display: flex; flex-direction: column; gap: 9px; max-height: 42vh; overflow-y: auto; padding-right: 4px; }
+.lib-list::-webkit-scrollbar { width: 6px; }
+.lib-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+
+.lib-empty {
+  padding: 26px 12px; text-align: center; font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+  border: 1px dashed rgba(255, 255, 255, 0.16); border-radius: 12px;
+}
+
+.lib-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.lib-item:hover { background: rgba(255, 255, 255, 0.09); }
+
+.lib-thumb {
+  width: 54px; height: 34px; flex: 0 0 54px; border-radius: 7px; overflow: hidden;
+  background: rgba(0, 0, 0, 0.45); display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; color: rgba(255, 255, 255, 0.6);
+}
+.lib-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.lib-meta { flex: 1; min-width: 0; }
+.lib-name { font-size: 0.8rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib-sub { font-size: 0.68rem; color: rgba(255, 255, 255, 0.45); margin-top: 2px; }
+
+.lib-check { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; color: rgba(255, 255, 255, 0.7); cursor: pointer; }
+.lib-check input { accent-color: #0a84ff; cursor: pointer; }
+
+.lib-play, .lib-del {
+  border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85); border-radius: 8px; cursor: pointer;
+  font-size: 0.7rem; padding: 5px 9px;
+}
+.lib-play:hover { background: rgba(10, 132, 255, 0.7); border-color: transparent; color: #fff; }
+.lib-del:hover { background: rgba(224, 67, 58, 0.8); border-color: transparent; color: #fff; }
+
+.lib-carousel {
+  margin-top: 16px; padding: 16px; border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.range-val { font-size: 0.72rem; color: #0a84ff; min-width: 38px; text-align: right; }
+.lib-tip { font-size: 0.72rem; color: rgba(255, 255, 255, 0.5); margin-top: 10px; }
+
+/* ---------- 媒体中心 Tabs ---------- */
+.media-tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 22px; }
+.media-tab {
+  border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.75); border-radius: 999px; cursor: pointer;
+  padding: 8px 22px; font-size: 0.82rem; transition: all 0.25s ease;
+}
+.media-tab.active { background: #0a84ff; border-color: transparent; color: #fff; }
+
+.gallery-title .sub { font-size: 0.72rem; color: rgba(255, 255, 255, 0.45); font-weight: 400; }
+
+.bg-card-name {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
+  padding: 14px 10px 8px; font-size: 0.7rem; color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bg-cover-empty { display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: rgba(255, 255, 255, 0.35); }
+
+/* ---------- Bing 每日壁纸 ---------- */
+.bing-block {
+  margin: 0 auto 18px; max-width: 720px;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px; padding: 14px 16px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px; justify-content: space-between;
+}
+.bing-card {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(120deg, rgba(10, 132, 255, 0.18), rgba(120, 80, 255, 0.14));
+  min-width: 240px;
+}
+.bing-card.active { border-color: #0a84ff; box-shadow: 0 0 0 1px rgba(10, 132, 255, 0.5) inset; }
+.bing-badge {
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em;
+  color: #fff; background: #0a84ff; border-radius: 6px; padding: 4px 8px;
+}
+.bing-title { font-size: 0.85rem; color: #fff; font-weight: 600; }
+.bing-sub { font-size: 0.7rem; color: rgba(255, 255, 255, 0.55); margin-top: 3px; }
+.bing-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bing-actions .btn-primary, .bing-actions .btn-ghost { padding: 8px 16px; font-size: 0.78rem; }
+.bing-auto { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: rgba(255, 255, 255, 0.7); cursor: pointer; }
+.bing-auto input { accent-color: #0a84ff; cursor: pointer; }
+
+/* ---------- 系统信息 ---------- */
+.sys-info {
+  margin: 26px auto 0; max-width: 720px;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px; padding: 14px 18px;
+}
+.sys-row { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; font-size: 0.78rem; }
+.sys-row span { color: rgba(255, 255, 255, 0.5); }
+.sys-row b { color: rgba(255, 255, 255, 0.9); font-weight: 500; word-break: break-all; text-align: right; }
+
+/* ---------- Toast ---------- */
+.toast-box {
+  position: fixed; right: 24px; bottom: 24px; z-index: 9998;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+  pointer-events: none;
+}
+.toast {
+  background: rgba(20, 20, 24, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff; font-size: 0.8rem; padding: 10px 16px; border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  opacity: 0; transform: translateY(12px); transition: all 0.28s ease;
+  max-width: 340px;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ---------- 小屏适配 ---------- */
+@media (max-width: 900px) {
+  .library-panel { width: 100vw; }
+  .sys-row { flex-direction: column; gap: 4px; }
+  .sys-row b { text-align: left; }
+}

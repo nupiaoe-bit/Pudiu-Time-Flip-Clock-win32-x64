@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pudiu Time 桌面版 · 翻页时钟 / 视频壁纸投放系统</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' media: file: data: blob: https: http:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: media: file: https: http:; media-src 'self' media: file: blob: data: https: http:; connect-src 'self' https: http: file: media:">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@700&amp;family=Oswald:wght@500;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="desktop.css">
+</head>
+<body>
+
+  <audio id="ambient-audio" loop preload="none"></audio>
+
+  <div id="app-root" class="app-root">
+
+    <div id="bg-layer"></div>
+    <div id="bg-overlay"></div>
+
+    <div id="standby-hint">
+      <svg viewBox="0 0 24 24"><path d="M12 2C9.24 2 7 4.24 7 7v3H6c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-1V7c0-2.76-2.24-5-5-5zm3 8H9V7c0-1.66 1.34-3 3-3s3 1.34 3 3v3zm-3 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+      <span data-i18n="standbyHint">点击屏幕或按任意键解锁</span>
+    </div>
+
+    <!-- ===================== 自绘标题栏（可拖拽） ===================== -->
+    <header class="app-header" id="app-header">
+      <div class="header-logo" id="header-logo" title="回到时钟屏">
+        <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+        <span data-i18n="appTitle">Pudiu Time 桌面版</span>
+        <em class="desktop-badge">DESKTOP v1.0</em>
+      </div>
+
+      <div class="header-right">
+        <div class="lang-dropdown-wrapper">
+          <div class="header-lang" id="current-lang-display">🌐 中文(简体)</div>
+          <ul class="lang-dropdown-list" id="lang-list">
+            <li data-lang="en">English</li>
+            <li data-lang="zh-CN">中文(简体)</li>
+            <li data-lang="zh-TW">中文(繁體)</li>
+            <li data-lang="es">Español</li>
+            <li data-lang="hi">हिन्दी</li>
+            <li data-lang="ar">العربية</li>
+            <li data-lang="bn">বাংলা</li>
+            <li data-lang="pt-BR">Português (Brasil)</li>
+            <li data-lang="pt-PT">Português (Portugal)</li>
+            <li data-lang="ru">Русский</li>
+            <li data-lang="ja">日本語</li>
+            <li data-lang="tr">Türkçe</li>
+            <li data-lang="ko">한국어</li>
+            <li data-lang="de">Deutsch</li>
+            <li data-lang="fr">Français</li>
+            <li data-lang="vi">Tiếng Việt</li>
+            <li data-lang="id">Bahasa Indonesia</li>
+            <li data-lang="uk">Українська</li>
+            <li data-lang="th">ภาษาไทย</li>
+            <li data-lang="el">Ελληνικά</li>
+            <li data-lang="he">עברית</li>
+            <li data-lang="fa">فارسی</li>
+            <li data-lang="it">Italiano</li>
+          </ul>
+        </div>
+        <div class="win-controls">
+          <button class="win-btn" id="win-min" title="最小化">─</button>
+          <button class="win-btn" id="win-max" title="最大化 / 还原">□</button>
+          <button class="win-btn win-close" id="win-close" title="关闭（默认最小化到托盘）">✕</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===================== 快捷控制条 ===================== -->
+    <div class="quick-controls" id="quick-controls">
+      <button id="btn-fullscreen" class="control-btn" title="全屏投放 (F)">⛶</button>
+      <button id="btn-standby" class="control-btn" title="待机锁屏 (L)">🔒</button>
+      <button id="btn-prev-bg" class="control-btn" title="上一张 (P)">◀</button>
+      <button id="btn-next-bg" class="control-btn" title="下一张 (N)">▶</button>
+      <button id="btn-library" class="control-btn" title="素材库 (B)">🎬</button>
+      <button id="btn-flip-x" class="control-btn" title="水平镜像">↔</button>
+      <button id="btn-flip-y" class="control-btn" title="垂直镜像">↕</button>
+      <button id="btn-pin" class="control-btn" title="窗口置顶">📌</button>
+    </div>
+
+    <!-- ===================== 右侧设置面板 ===================== -->
+    <div class="sidebar-wrapper" id="sidebar-wrapper">
+      <button id="settings-btn" class="control-btn" title="系统设置">⚙️</button>
+      <div class="sidebar-panel">
+        <div class="sidebar-header-row">
+          <div class="section-title" data-i18n="settingTitle">系统设置</div>
+          <button id="close-sidebar-btn" class="sidebar-close-btn" title="关闭">×</button>
+        </div>
+
+        <div class="form-group"><label data-i18n="setClockVis">时钟显示</label><label class="switch"><input type="checkbox" id="setting-show-clock" checked><span class="slider"></span></label></div>
+        <div class="form-group">
+          <label data-i18n="setTimeFormat">时间格式</label>
+          <select class="custom-select" id="setting-hour-format">
+            <option value="24" data-i18n="fmt24">24 小时制</option>
+            <option value="12" data-i18n="fmt12">12 小时制</option>
+          </select>
+        </div>
+        <div class="form-group"><label data-i18n="setScale">整体缩放</label><input type="range" id="setting-scale" min="0.5" max="1.5" step="0.1" value="1"></div>
+
+        <div class="section-title" data-i18n="setFontUI">字体与配色</div>
+        <div class="form-group">
+          <label data-i18n="setFont">数字字体</label>
+          <select class="custom-select" id="setting-font">
+            <option value="'Inter', sans-serif" data-i18n="fontInter">现代 (Inter)</option>
+            <option value="'Oswald', sans-serif" data-i18n="fontOswald">力量 (Oswald)</option>
+            <option value="'Bebas Neue', sans-serif" data-i18n="fontBebas">海报 (Bebas)</option>
+            <option value="'JetBrains Mono', monospace" data-i18n="fontJetBrains">极客 (JetBrains)</option>
+          </select>
+        </div>
+        <div class="form-group"><label data-i18n="setCardBg">卡片底色</label><input type="color" class="color-picker" id="setting-card-bg" value="#1a1a1c"></div>
+        <div class="form-group"><label data-i18n="setFontColor">翻页字色</label><input type="color" class="color-picker" id="setting-font-color" value="#f5f5f7"></div>
+
+        <label class="sidebar-upload-card" for="bg-color-picker">
+          <div class="icon">🎨</div>
+          <div class="text">纯色背景（点击取色）</div>
+          <input type="color" id="bg-color-picker" value="#000000" style="display:none;">
+        </label>
+
+        <div class="section-title" data-i18n="setAudioTitle">沉浸式背景音</div>
+        <div class="form-group"><label data-i18n="setAudioToggle">启用背景音乐</label><label class="switch"><input type="checkbox" id="setting-audio-toggle"><span class="slider"></span></label></div>
+        <div class="form-group"><label data-i18n="setAudioVol">音量</label><input type="range" id="setting-volume" min="0" max="1" step="0.05" value="0.5"></div>
+        <label class="sidebar-upload-card" for="custom-audio-upload">
+          <div class="icon">🎵</div>
+          <div class="text" id="mp3-name" data-i18n="setAudioUpload">选择本地音频…</div>
+          <input type="file" id="custom-audio-upload" accept="audio/*" style="display:none;">
+        </label>
+
+        <!-- 桌面投放专有设置 -->
+        <div class="section-title">🖥️ 桌面投放</div>
+        <div class="form-group"><label>开机自动启动</label><label class="switch"><input type="checkbox" id="setting-autostart"><span class="slider"></span></label></div>
+        <div class="form-group"><label>窗口始终置顶</label><label class="switch"><input type="checkbox" id="setting-ontop"><span class="slider"></span></label></div>
+        <div class="form-group"><label>关闭时最小化到托盘</label><label class="switch"><input type="checkbox" id="setting-tray" checked><span class="slider"></span></label></div>
+        <div class="form-group"><label>启动即全屏投放</label><label class="switch"><input type="checkbox" id="setting-autofull"><span class="slider"></span></label></div>
+        <div class="form-group">
+          <label>投放到显示器</label>
+          <select class="custom-select" id="setting-display"><option value="">主显示器</option></select>
+        </div>
+        <button class="btn-ghost" id="open-dir-btn">📂 打开配置与素材目录</button>
+
+        <button class="btn-reset" id="reset-btn" data-i18n="setReset">清空配置并重置</button>
+      </div>
+    </div>
+
+    <!-- ===================== 素材库面板 ===================== -->
+    <div class="library-panel" id="library-panel">
+      <div class="lib-head">
+        <div class="lib-title">🎬 本地素材库</div>
+        <button class="sidebar-close-btn" id="close-library-btn" title="关闭">×</button>
+      </div>
+
+      <div class="lib-toolbar">
+        <button class="btn-primary" id="import-media-btn">＋ 导入视频 / 图片</button>
+        <button class="btn-ghost" id="clear-lib-btn">🗑 清空素材</button>
+        <span class="lib-count" id="lib-count">0 个素材</span>
+      </div>
+
+      <div class="lib-section-title">播放列表（勾选进入轮播）</div>
+      <div class="lib-list" id="lib-list"></div>
+
+      <div class="lib-carousel">
+        <div class="form-group"><label>轮播播放</label><label class="switch"><input type="checkbox" id="car-enabled"><span class="slider"></span></label></div>
+        <div class="form-group"><label>每张停留（秒）</label><input type="range" id="car-interval" min="5" max="300" step="5" value="30"><span class="range-val" id="car-interval-val">30s</span></div>
+        <div class="form-group"><label>随机顺序</label><label class="switch"><input type="checkbox" id="car-shuffle"><span class="slider"></span></label></div>
+        <div class="form-group"><label>视频静音播放</label><label class="switch"><input type="checkbox" id="car-mute" checked><span class="slider"></span></label></div>
+        <div class="form-group"><label>视频音量</label><input type="range" id="car-volume" min="0" max="100" step="5" value="80"><span class="range-val" id="car-volume-val">80%</span></div>
+        <div class="lib-tip" id="car-status">当前：未轮播</div>
+      </div>
+    </div>
+
+    <div class="scroll-container" id="scroll-app">
+
+      <!-- ============ 屏幕 1：翻页时钟 ============ -->
+      <section class="screen-section" id="screen-clock">
+        <div class="widget-container" id="main-widget">
+          <div class="clock-display">
+            <div class="time-group">
+              <div class="flip-unit" id="hours-tens"><div class="card top-bg"><span>0</span></div><div class="card bottom-bg"><span>0</span></div><div class="card top-flip"><span>0</span></div><div class="card bottom-flip"><span>0</span></div></div>
+              <div class="flip-unit" id="hours-ones"><div class="card top-bg"><span>0</span></div><div class="card bottom-bg"><span>0</span></div><div class="card top-flip"><span>0</span></div><div class="card bottom-flip"><span>0</span></div></div>
+            </div>
+            <div class="colon">:</div>
+            <div class="time-group">
+              <div class="flip-unit" id="minutes-tens"><div class="card top-bg"><span>0</span></div><div class="card bottom-bg"><span>0</span></div><div class="card top-flip"><span>0</span></div><div class="card bottom-flip"><span>0</span></div></div>
+              <div class="flip-unit" id="minutes-ones"><div class="card top-bg"><span>0</span></div><div class="card bottom-bg"><span>0</span></div><div class="card top-flip"><span>0</span></div><div class="card bottom-flip"><span>0</span></div></div>
+            </div>
+            <div class="colon">:</div>
+            <div class="time-group">
+              <div class="flip-unit" id="seconds-tens"><div class="card top-bg"><span>0</span></div><div class="card bottom-bg"><span>0</span></div><div class="card top-flip"><span>0</span></div><div class="card bottom-flip"><span>0</span></div></div>
+              <div class="flip-unit" id="seconds-ones"><div class="card top-bg"><span>0</span></div><div class="card bottom-bg"><span>0</span></div><div class="card top-flip"><span>0</span></div><div class="card bottom-flip"><span>0</span></div></div>
+            </div>
+          </div>
+
+          <div class="info-footer">
+            <div class="city-name"><span id="display-city">...</span><span class="ampm-badge" id="display-ampm">AM</span></div>
+            <div class="date-display" id="display-date">加载中…</div>
+          </div>
+        </div>
+
+        <div class="dock-wrapper" id="dock-wrapper">
+          <div class="dock-container" id="dock-container"></div>
+        </div>
+
+        <div class="scroll-hint" id="hint-to-media">
+          <span data-i18n="scrollMedia">更换壁纸</span>
+          <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+        </div>
+      </section>
+
+      <!-- ============ 屏幕 2：媒体中心 ============ -->
+      <section class="screen-section" id="screen-media">
+        <div class="media-panel">
+          <div class="media-tabs">
+            <button class="media-tab active" data-tab="local">本地素材</button>
+            <button class="media-tab" data-tab="online">在线壁纸</button>
+          </div>
+
+          <div class="media-body" id="media-local">
+            <div class="gallery-title">本地视频 / 图片 <span class="sub">（素材保存在本机，重启不丢失）</span></div>
+            <div class="media-gallery" id="local-grid">
+              <div class="bg-card upload-card" id="local-import-card">
+                <span class="upload-icon">＋</span>
+                <span class="upload-text">导入本地视频 / 图片</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="media-body hidden" id="media-online">
+            <div class="gallery-title" data-i18n="mediaTitle">在线视觉素材库</div>
+
+            <div class="bing-block" id="bing-block">
+              <div class="bing-card" id="bing-card">
+                <div class="bing-badge">Bing</div>
+                <div class="bing-info">
+                  <div class="bing-title">Bing 每日壁纸</div>
+                  <div class="bing-sub" id="bing-status">未启用</div>
+                </div>
+              </div>
+              <div class="bing-actions">
+                <button class="btn-primary" id="bing-apply">设为背景</button>
+                <button class="btn-ghost" id="bing-next">换一张</button>
+                <label class="bing-auto"><input type="checkbox" id="bing-auto"><span>每日 0 点自动更新</span></label>
+              </div>
+            </div>
+
+            <div class="media-gallery" id="master-bg-grid"></div>
+          </div>
+        </div>
+
+        <div class="scroll-hint" id="hint-to-about" style="bottom: 40px;">
+          <span data-i18n="scrollAbout">了解功能</span>
+          <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+        </div>
+      </section>
+
+      <!-- ============ 屏幕 3：功能与系统信息 ============ -->
+      <section class="screen-section" id="screen-about">
+        <div class="about-panel">
+          <div class="about-hero">
+            <h2 data-i18n="aboutH2">美学与精准的完美结合</h2>
+            <p data-i18n="aboutP1">Pudiu Time 桌面版是一套单机数字标牌系统：翻页时钟 + 本地视频轮播 + 多时区底座，无需服务器、无需联网即可长期投放。</p>
+          </div>
+
+          <div class="feature-grid">
+            <div class="feature-card"><span class="feature-icon">🎬</span><div class="feature-title">本地视频轮播</div><div class="feature-desc">导入本机视频/图片，按顺序或随机自动切换，可设停留时长与静音。</div></div>
+            <div class="feature-card"><span class="feature-icon">🖥️</span><div class="feature-title">多显示器投放</div><div class="feature-desc">可指定任意一台显示器全屏输出，适配合展位与门店大屏。</div></div>
+            <div class="feature-card"><span class="feature-icon">⚡</span><div class="feature-title">开机自启动</div><div class="feature-desc">设为开机自启 + 启动即全屏，通电后自动进入投放状态。</div></div>
+            <div class="feature-card"><span class="feature-icon">🔒</span><div class="feature-title">防误触待机</div><div class="feature-desc">L 键锁定，鼠标或按键唤醒提示，避免现场观众误操作。</div></div>
+            <div class="feature-card"><span class="feature-icon">🕒</span><div class="feature-title">毫秒级走时</div><div class="feature-desc">按秒对齐的自校正引擎，长时间投放不漂移。</div></div>
+            <div class="feature-card"><span class="feature-icon">🌍</span><div class="feature-title">多时区底座</div><div class="feature-desc">同时挂载多个城市时间，跨国团队与展会必备。</div></div>
+            <div class="feature-card"><span class="feature-icon">🎨</span><div class="feature-title">自由换肤</div><div class="feature-desc">字体、卡片底色、字色、缩放、镜像，全方位自定义。</div></div>
+            <div class="feature-card"><span class="feature-icon">💾</span><div class="feature-title">本地持久化</div><div class="feature-desc">配置与素材索引保存在本机用户目录，重启后原样恢复。</div></div>
+          </div>
+
+          <div class="sys-info" id="sys-info">
+            <div class="sys-row"><span>版本</span><b id="si-version">-</b></div>
+            <div class="sys-row"><span>运行时</span><b id="si-runtime">-</b></div>
+            <div class="sys-row"><span>配置目录</span><b id="si-userdata">-</b></div>
+          </div>
+
+          <div class="about-footer">
+            <p>快捷键：F 全屏 · L 锁屏 · N 下一张 · P 上一张 · B 素材库 · Esc 退出全屏</p>
+            <div class="friendly-links">
+              <span class="links-title">🔗 相关站点：</span>
+              <a href="https://time.pudiu.com/" target="_blank">网页版时钟</a>
+              <a href="https://www.pudiu.com/" target="_blank">Pudiu Team</a>
+              <a href="https://tool.pudiu.com/" target="_blank">工具箱</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ===================== 时区选择弹窗 ===================== -->
+  <div id="tz-modal" class="tz-modal">
+    <div class="tz-content">
+      <div class="tz-header">
+        <h3 data-i18n="tzModalTitle">添加全球城市时区</h3>
+        <button class="close-tz" id="close-tz-btn">×</button>
+      </div>
+      <div class="tz-body">
+        <div class="tz-group-title" data-i18n="tzAsia">亚洲</div>
+        <div class="tz-grid">
+          <div class="tz-item" data-tz="Asia/Shanghai" data-city-en="Beijing">🇨🇳 <span data-i18n="city_Beijing">北京</span> (BJS)</div>
+          <div class="tz-item" data-tz="Asia/Tokyo" data-city-en="Tokyo">🇯🇵 <span data-i18n="city_Tokyo">东京</span> (TYO)</div>
+          <div class="tz-item" data-tz="Asia/Seoul" data-city-en="Seoul">🇰🇷 <span data-i18n="city_Seoul">首尔</span> (SEL)</div>
+          <div class="tz-item" data-tz="Asia/Singapore" data-city-en="Singapore">🇸🇬 <span data-i18n="city_Singapore">新加坡</span> (SIN)</div>
+          <div class="tz-item" data-tz="Asia/Bangkok" data-city-en="Bangkok">🇹🇭 <span data-i18n="city_Bangkok">曼谷</span> (BKK)</div>
+          <div class="tz-item" data-tz="Asia/Dubai" data-city-en="Dubai">🇦🇪 <span data-i18n="city_Dubai">迪拜</span> (DXB)</div>
+        </div>
+        <div class="tz-group-title" style="margin-top: 25px;" data-i18n="tzEurope">欧洲</div>
+        <div class="tz-grid">
+          <div class="tz-item" data-tz="Europe/London" data-city-en="London">🇬🇧 <span data-i18n="city_London">伦敦</span> (LON)</div>
+          <div class="tz-item" data-tz="Europe/Paris" data-city-en="Paris">🇫🇷 <span data-i18n="city_Paris">巴黎</span> (PAR)</div>
+          <div class="tz-item" data-tz="Europe/Berlin" data-city-en="Berlin">🇩🇪 <span data-i18n="city_Berlin">柏林</span> (BER)</div>
+          <div class="tz-item" data-tz="Europe/Rome" data-city-en="Rome">🇮🇹 <span data-i18n="city_Rome">罗马</span> (ROM)</div>
+          <div class="tz-item" data-tz="Europe/Moscow" data-city-en="Moscow">🇷🇺 <span data-i18n="city_Moscow">莫斯科</span> (MOW)</div>
+        </div>
+        <div class="tz-group-title" style="margin-top: 25px;" data-i18n="tzAmericas">美洲</div>
+        <div class="tz-grid">
+          <div class="tz-item" data-tz="America/New_York" data-city-en="New York">🇺🇸 <span data-i18n="city_NewYork">纽约</span> (NYC)</div>
+          <div class="tz-item" data-tz="America/Los_Angeles" data-city-en="Los Angeles">🇺🇸 <span data-i18n="city_LosAngeles">洛杉矶</span> (LAX)</div>
+          <div class="tz-item" data-tz="America/Chicago" data-city-en="Chicago">🇺🇸 <span data-i18n="city_Chicago">芝加哥</span> (CHI)</div>
+          <div class="tz-item" data-tz="America/Toronto" data-city-en="Toronto">🇨🇦 <span data-i18n="city_Toronto">多伦多</span> (YTO)</div>
+          <div class="tz-item" data-tz="America/Sao_Paulo" data-city-en="Sao Paulo">🇧🇷 <span data-i18n="city_SaoPaulo">圣保罗</span> (SAO)</div>
+        </div>
+        <div class="tz-group-title" style="margin-top: 25px;" data-i18n="tzOther">大洋洲与非洲</div>
+        <div class="tz-grid">
+          <div class="tz-item" data-tz="Australia/Sydney" data-city-en="Sydney">🇦🇺 <span data-i18n="city_Sydney">悉尼</span> (SYD)</div>
+          <div class="tz-item" data-tz="Pacific/Auckland" data-city-en="Auckland">🇳🇿 <span data-i18n="city_Auckland">奥克兰</span> (AKL)</div>
+          <div class="tz-item" data-tz="Africa/Cairo" data-city-en="Cairo">🇪🇬 <span data-i18n="city_Cairo">开罗</span> (CAI)</div>
+          <div class="tz-item" data-tz="Africa/Johannesburg" data-city-en="Johannesburg">🇿🇦 <span data-i18n="city_Johannesburg">约翰内斯堡</span> (JNB)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-box" class="toast-box"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

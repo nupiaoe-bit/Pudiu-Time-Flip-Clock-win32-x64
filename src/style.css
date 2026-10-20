@@ -1,0 +1,496 @@
+/* ================= 核心重置与变量 ================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --text-main: #f5f5f7;
+  --text-secondary: #86868b;
+  --dock-bg: rgba(20, 20, 22, 0.65);
+  --clock-font: 'Inter', "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --clock-color: #f5f5f7;
+  --card-bg-color: #1a1a1c;
+  --clock-scale: 1;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background-color: #000; color: var(--text-main); font-family: var(--clock-font);
+  -webkit-font-smoothing: antialiased; overflow: hidden; 
+}
+
+/* ================= 全局物理翻转层 ================= */
+.app-root { width: 100vw; height: 100vh; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: center center; position: relative; }
+.app-root.mirror-x { transform: scaleX(-1); }
+.app-root.mirror-y { transform: scaleY(-1); }
+.app-root.mirror-xy { transform: scale(-1, -1); }
+
+/* ================= 底层背景渲染 ================= */
+#bg-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; background-color: #000; pointer-events: none; }
+#bg-layer img, #bg-layer video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; animation: fadeIn 0.8s ease forwards; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+#bg-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.35); z-index: 1; pointer-events: none; transition: background 0.8s ease; }
+
+/* ================= 头部导航栏 ================= */
+.app-header { position: absolute; top: 0; left: 0; width: 100%; padding: 25px 40px; display: flex; justify-content: space-between; align-items: center; z-index: 50; transition: opacity 0.4s ease, transform 0.4s ease; }
+.header-logo { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.header-logo svg { width: 28px; height: 28px; fill: #fff; }
+.header-logo span { font-size: 1.2rem; font-weight: 700; letter-spacing: 2px; color: #fff; text-transform: uppercase; }
+.header-lang { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 50px; color: #fff; font-size: 0.85rem; font-weight: 500; cursor: pointer; backdrop-filter: blur(10px); transition: all 0.2s; }
+.header-lang:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* ================= 悬浮快捷控制台 ================= */
+.quick-controls { position: absolute; left: 40px; bottom: 40px; display: flex; gap: 15px; z-index: 100; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.control-btn { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 1.2rem; cursor: pointer; opacity: 0.7; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+.control-btn:hover, .control-btn.active { opacity: 1; background: rgba(0, 0, 0, 0.8); transform: scale(1.1); border-color: #0a84ff; }
+
+/* ================= 全局主页面滚动 ================= */
+.scroll-container { position: relative; z-index: 5; width: 100vw; height: 100vh; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+.scroll-container::-webkit-scrollbar { display: none; } 
+.screen-section { width: 100vw; min-height: 100vh; scroll-snap-align: start; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+
+/* ================= 核心翻页时钟 ================= */
+.widget-container { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4vh; width: 100%; transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1); }
+.clock-display { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 3vw, 30px); transform: scale(var(--clock-scale)); transition: transform 0.3s ease; }
+.time-group { display: flex; gap: clamp(3px, 1vw, 6px); }
+.colon { font-size: clamp(4rem, 10vw, 8rem); color: rgba(255, 255, 255, 0.4); animation: pulse 2s infinite; padding-bottom: 2vh; font-family: 'Inter', sans-serif; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+
+.flip-unit { position: relative; width: clamp(45px, 10vw, 150px); height: clamp(70px, 16vw, 220px); font-size: clamp(3.5rem, 13vw, 18rem); font-weight: 700; color: var(--clock-color); border-radius: clamp(8px, 1.5vw, 16px); box-shadow: 0 20px 40px rgba(0,0,0,0.6); perspective: 1500px; background-color: var(--card-bg-color); }
+.flip-unit::after { content: ""; position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(0,0,0,0.8); z-index: 10; margin-top: -1px; box-shadow: 0 1px 1px rgba(255,255,255,0.1); }
+.card { position: absolute; left: 0; width: 100%; height: 50%; overflow: hidden; backface-visibility: hidden; transform-style: preserve-3d; background-color: var(--card-bg-color); }
+.card span { position: absolute; left: 0; width: 100%; height: 200%; display: flex; align-items: center; justify-content: center; line-height: 1; font-variant-numeric: tabular-nums; }
+.top-bg, .top-flip { top: 0; transform-origin: bottom; border-top-left-radius: inherit; border-top-right-radius: inherit; }
+.top-bg span, .top-flip span { top: 0; }
+.bottom-bg, .bottom-flip { bottom: 0; transform-origin: top; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit; }
+.bottom-bg span, .bottom-flip span { bottom: 0; }
+.top-bg { z-index: 1; } .bottom-bg { z-index: 1; } .top-flip { z-index: 3; } .bottom-flip { z-index: 2; transform: rotateX(90deg); }
+
+.is-flipping .top-flip { animation: flipTop 0.4s cubic-bezier(0.3, 0, 0.8, 0.15) forwards; }
+.is-flipping .bottom-flip { animation: flipBottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15) 0.4s forwards; }
+@keyframes flipTop { 0% { transform: rotateX(0deg); filter: brightness(1); } 100% { transform: rotateX(-90deg); filter: brightness(0.2); } }
+@keyframes flipBottom { 0% { transform: rotateX(90deg); filter: brightness(0.2); } 100% { transform: rotateX(0deg); filter: brightness(1); } }
+
+/* ================= 透明底座与文字信息 (无边框大字号版) ================= */
+.info-footer { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 8px; 
+  background: transparent; 
+  padding: 10px 20px; 
+  border: none; 
+  transition: transform 0.3s ease; 
+}
+
+.city-name { 
+  font-size: clamp(1.4rem, 2.5vw, 1.8rem); 
+  font-weight: 700; 
+  letter-spacing: 4px; 
+  text-transform: uppercase; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 10px; 
+  color: #fff; 
+  text-shadow: 0 4px 15px rgba(0,0,0,0.8); 
+}
+
+.ampm-badge { 
+  font-size: clamp(0.75rem, 1.2vw, 0.9rem); 
+  font-weight: 600; 
+  background: rgba(255,255,255,0.15); 
+  padding: 4px 10px; 
+  border-radius: 8px; 
+  letter-spacing: 1px; 
+  color: #fff; 
+  display: none; 
+  border: 1px solid rgba(255,255,255,0.1); 
+}
+
+.date-display { 
+  font-size: clamp(1.15rem, 2vw, 1.4rem); 
+  color: rgba(255, 255, 255, 0.95); 
+  font-weight: 600; 
+  letter-spacing: 2px; 
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8); 
+  margin-top: 5px; 
+}
+
+/* ================= 时区 Dock ================= */
+.dock-wrapper { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; z-index: 10; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 800px; justify-content: center; }
+.dock-container { display: flex; gap: 10px; background: var(--dock-bg); padding: 10px 14px; border-radius: 100px; backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); max-width: 95vw; overflow-x: auto; }
+.dock-container::-webkit-scrollbar { display: none; }
+.dock-btn { background: transparent; border: none; color: #aaa; font-size: 0.95rem; font-weight: 600; padding: 10px 20px; border-radius: 100px; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.dock-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+.dock-btn.active { background: rgba(255,255,255,0.95); color: #000; box-shadow: 0 4px 15px rgba(255,255,255,0.2); }
+.dock-btn.add-btn { border: 1px dashed rgba(255,255,255,0.3); color: #fff; }
+.dock-btn.add-btn:hover { border-style: solid; background: rgba(255,255,255,0.15); }
+
+/* ================= 全球时区选择模态框 ================= */
+.tz-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); display: flex; align-items: center; justify-content: center; z-index: 3000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.tz-modal.show { opacity: 1; pointer-events: auto; }
+.tz-content { background: rgba(18, 18, 20, 0.9); border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 700px; max-height: 80vh; border-radius: 24px; display: flex; flex-direction: column; box-shadow: 0 30px 60px rgba(0,0,0,0.6); transform: scale(0.95) translateY(10px); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.tz-modal.show .tz-content { transform: scale(1) translateY(0); }
+.tz-header { padding: 25px 30px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+.tz-header h3 { color: #fff; font-size: 1.2rem; font-weight: 700; letter-spacing: 1px;}
+.close-tz { background: transparent; border: none; color: #888; font-size: 1.8rem; cursor: pointer; transition: color 0.2s;}
+.close-tz:hover { color: #fff; }
+.tz-body { padding: 25px 30px; overflow-y: auto; flex: 1; }
+.tz-body::-webkit-scrollbar { display: none; }
+.tz-group-title { color: #888; font-size: 0.9rem; margin: 20px 0 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;}
+.tz-group-title:first-child { margin-top: 0; }
+.tz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.tz-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 15px; color: #ddd; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+.tz-item:hover { background: rgba(255,255,255,0.15); color: #fff; transform: translateY(-2px); border-color: rgba(255,255,255,0.2);}
+
+/* ================= 下滑指示器 ================= */
+.scroll-hint {
+  position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; 
+  opacity: 0.85; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  animation: bounce 2s infinite; cursor: pointer; z-index: 150; transition: all 0.5s ease;
+}
+.scroll-hint span { font-size: 0.85rem; letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; font-weight: 500;}
+.scroll-hint svg { width: 26px; height: 26px; fill: #fff; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));}
+@keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); } 40% { transform: translateY(-10px) translateX(-50%); } 60% { transform: translateY(-5px) translateX(-50%); } }
+
+/* ================= 侧边抽屉设置 ================= */
+.sidebar-wrapper { position: absolute; top: 0; right: 0; width: 380px; height: 100vh; transform: translateX(100%); transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 2000; will-change: transform; display: flex; align-items: center; }
+.sidebar-wrapper.open { transform: translateX(0); }
+#settings-btn { position: absolute; left: -75px; bottom: 40px; width: 54px; height: 54px; font-size: 1.5rem; box-shadow: -5px 5px 20px rgba(0,0,0,0.5); }
+.sidebar-panel { width: 100%; height: 100%; padding: 40px 25px; overflow-y: auto; overflow-x: hidden; background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-left: 1px solid rgba(255,255,255,0.1); box-shadow: -10px 0 40px rgba(0,0,0,0.6); }
+.sidebar-panel::-webkit-scrollbar { display: none; }
+.sidebar-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-header-row .section-title { margin: 0; border: none; padding: 0; }
+.sidebar-close-btn { background: transparent; border: none; color: #888; font-size: 2rem; cursor: pointer; transition: color 0.2s; line-height: 1; display: block; }
+.sidebar-close-btn:hover { color: #fff; }
+.section-title { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 25px 0 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; letter-spacing: 1px;}
+.form-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.02);}
+.form-group label { font-size: 0.95rem; color: #ddd; font-weight: 500; }
+.custom-select { background: #2a2a2d; color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 6px 10px; border-radius: 8px; font-size: 0.9rem; outline: none; font-family: inherit; cursor: pointer; width: 135px;}
+.color-picker { -webkit-appearance: none; width: 28px; height: 28px; border: none; border-radius: 50%; cursor: pointer; background: transparent; padding: 0; }
+.color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+.color-picker::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; }
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #0a84ff; }
+input:checked + .slider:before { transform: translateX(20px); }
+input[type=range] { -webkit-appearance: none; width: 110px; background: transparent; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #fff; cursor: pointer; margin-top: -6px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #555; border-radius: 2px; }
+.btn-reset { margin-top: 25px; width: 100%; padding: 14px; background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.4); color: #ff3b30; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; letter-spacing: 1px;}
+.btn-reset:hover { background: rgba(255, 59, 48, 0.25); color: #fff; }
+/* ================= 纯色背景按钮样式 ================= */
+#bg-color-btn {
+  position: absolute;
+  left: -75px;
+  bottom: 105px; /* 位于设置按钮正上方 */
+  width: 54px;
+  height: 54px;
+  font-size: 1.5rem;
+  box-shadow: -5px 5px 20px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0;
+}
+#bg-color-picker {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: none;
+}
+/* 手机端适配：保持与设置按钮相同的缩小比例和间距 */
+@media (max-width: 768px) {
+  #bg-color-btn {
+    left: -60px;
+    bottom: 90px;
+    width: 48px;
+    height: 48px;
+  }
+}
+/* RTL 语言排版适配 */
+html[dir="rtl"] #bg-color-btn { 
+  right: auto !important; 
+  left: -75px !important; 
+  box-shadow: -5px 5px 20px rgba(0,0,0,0.5) !important; 
+}
+
+/* ================= 侧边栏专属 MP3 上传卡片 UI (强化修复版) ================= */
+.sidebar-upload-card {
+  display: flex !important; 
+  align-items: center; 
+  gap: 15px; 
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.25); 
+  padding: 14px 18px; 
+  border-radius: 12px;
+  cursor: pointer; 
+  transition: all 0.3s ease; 
+  margin: 15px 0 !important; 
+  width: 100%; 
+  box-sizing: border-box;
+}
+.sidebar-upload-card:hover { border-color: #0a84ff; background: rgba(10, 132, 255, 0.12); transform: translateX(4px); }
+.sidebar-upload-card .icon { font-size: 1.4rem; }
+.sidebar-upload-card .text { color: #ddd; font-size: 0.9rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+
+/* ================= 第二/三屏展示区布局 ================= */
+.media-panel, .about-panel { width: 95%; max-width: 1400px; padding: clamp(30px, 5vw, 60px); background: rgba(15, 15, 18, 0.75); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; box-shadow: 0 40px 80px rgba(0,0,0,0.6); }
+.gallery-title { font-size: clamp(1.4rem, 2.5vw, 1.8rem); font-weight: 700; color: #fff; margin-bottom: 30px; text-align: center; letter-spacing: 2px;}
+.media-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+
+/* 核心重构：引入纵横比，让卡片高度交由宽度自适应决定，完美防止塌陷 */
+.bg-card { 
+  background: #2a2a2d; 
+  border-radius: 16px; 
+  overflow: hidden; 
+  cursor: pointer; 
+  border: 2px solid transparent; 
+  transition: all 0.2s; 
+  position: relative; 
+  aspect-ratio: 16 / 10; 
+  display: flex;
+  flex-direction: column;
+}
+.bg-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
+.bg-card.active { border-color: #0a84ff; box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.4); }
+
+/* 图片/视频完全撑满卡片容器 */
+.bg-cover { width: 100%; height: 100%; object-fit: cover; background: #111; display: block; }
+.bg-type-badge { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; backdrop-filter: blur(4px); z-index: 2; }
+
+/* 升级上传卡片 UI：无缝继承 16:10 比例，移除硬编码的固定 min-height */
+.upload-card { 
+  border: 2px dashed rgba(255,255,255,0.3); 
+  background: rgba(0,0,0,0.2); 
+  border-radius: 16px; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  color: #aaa; 
+  height: 100%; 
+  transition: all 0.3s ease; 
+  cursor: pointer; 
+  padding: 20px; 
+  text-align: center; 
+  box-sizing: border-box; 
+  gap: 12px;
+}
+.upload-card:hover { border-color: #0a84ff; color: #fff; background: rgba(10, 132, 255, 0.1); transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
+.upload-icon { font-size: 2.5rem; margin-bottom: 0; line-height: 1; color: inherit; }
+.upload-text { font-size: 0.9rem; font-weight: 500; letter-spacing: 1px; color: inherit; }
+
+/* 关于我们详情面板 */
+.about-panel { display: flex; flex-direction: column; gap: 40px; }
+.about-hero { text-align: center; max-width: 900px; margin: 0 auto; }
+.about-hero h2 { font-size: clamp(2rem, 4vw, 2.8rem); color: #fff; margin-bottom: 20px; font-weight: 700; letter-spacing: 2px; }
+.about-hero p { font-size: clamp(1rem, 1.5vw, 1.15rem); color: #ccc; line-height: 1.8; font-weight: 400; }
+.about-hero .highlight { color: #fff; font-weight: 600; }
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+.feature-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; transition: all 0.3s ease; }
+.feature-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+.feature-icon { font-size: 2.2rem; margin-bottom: 15px; display: inline-block;}
+.feature-title { font-size: 1.1rem; color: #fff; font-weight: 600; margin-bottom: 8px; letter-spacing: 1px; }
+.feature-desc { font-size: 0.9rem; color: #999; line-height: 1.6; }
+.about-footer { text-align: center; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px; }
+.about-footer p { color: #888; font-size: 0.95rem; letter-spacing: 1px; }
+.friendly-links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; margin-top: 20px; padding-top: 20px; border-top: 1px dotted rgba(255,255,255,0.1); }
+.links-title { color: #666; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; }
+.friendly-links a { color: #aaa; font-size: 0.9rem; text-decoration: none; transition: color 0.2s; font-family: 'Inter', sans-serif;}
+.friendly-links a:hover { color: #fff; text-decoration: underline; }
+
+/* ================= 移动端排版适配 ================= */
+@media (max-width: 768px) {
+  .app-header { padding: 15px 20px; }
+  .header-logo span { font-size: 1rem; letter-spacing: 1px; }
+  .header-lang { padding: 4px 10px; font-size: 0.75rem; }
+  .quick-controls { left: 15px; bottom: 85px; gap: 10px; flex-wrap: wrap; max-width: 160px; }
+  .control-btn { width: 42px; height: 42px; font-size: 1.1rem; }
+  .dock-wrapper { bottom: 15px; padding: 0 10px; }
+  .dock-container { width: 100%; justify-content: flex-start; padding: 6px 10px; }
+  .dock-btn { font-size: 0.85rem; padding: 8px 14px; }
+  .sidebar-wrapper { width: 100vw; }
+  #settings-btn { left: -60px; bottom: 30px; width: 48px; height: 48px; }
+  .sidebar-close-btn { display: block; }
+  .media-gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .upload-icon { font-size: 1.8rem; }
+  .upload-text { font-size: 0.75rem; }
+  .scroll-hint { bottom: 95px; }
+  .feature-grid { grid-template-columns: 1fr; }
+}
+
+/* ================= 沉浸与锁屏模式交互效果 ================= */
+body.fullscreen-mode .app-header, body.standby-mode .app-header { opacity: 0; transform: translateY(-30px); pointer-events: none; }
+body.fullscreen-mode .quick-controls, body.standby-mode .quick-controls { opacity: 0; transform: translateY(30px); pointer-events: none; }
+body.fullscreen-mode .dock-wrapper, body.standby-mode .dock-wrapper { opacity: 0; transform: translate(-50%, 30px); pointer-events: none; }
+body.fullscreen-mode .scroll-hint, body.standby-mode .scroll-hint { opacity: 0; pointer-events: none; }
+body.fullscreen-mode .sidebar-wrapper, body.standby-mode .sidebar-wrapper { opacity: 0; pointer-events: none; }
+
+/* 锁屏面板重构 (默认绝对隐藏) */
+#standby-hint {
+  position: fixed; bottom: 10vh; left: 50%; transform: translateX(-50%) translateY(20px);
+  color: rgba(255, 255, 255, 0.9); font-size: 1.05rem; letter-spacing: 2px; 
+  opacity: 0; pointer-events: none; transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  font-weight: 500; font-family: "PingFang SC", sans-serif;
+  background: rgba(20, 20, 22, 0.6); padding: 18px 30px; border-radius: 16px;
+  backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+body.standby-mode #standby-hint.active { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; cursor: pointer; }
+#standby-hint svg { width: 28px; height: 28px; fill: currentColor; animation: pulse-up 2s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+@keyframes pulse-up { 0%, 100% { transform: translateY(0); opacity: 0.6; } 50% { transform: translateY(-8px); opacity: 1; } }
+
+body.standby-mode .scroll-container { overflow-y: hidden; } 
+body.standby-mode #bg-overlay { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); }
+body.standby-mode .widget-container { transform: scale(0.9); }
+/* ================= 全球化多语言下拉菜单 ================= */
+.lang-dropdown-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+.lang-dropdown-list {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background: rgba(20, 20, 22, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  list-style: none;
+  width: 180px;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  /* 默认隐藏，通过 JS 切换 class 显示 */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.lang-dropdown-list::-webkit-scrollbar {
+  width: 4px;
+}
+.lang-dropdown-list::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+}
+.lang-dropdown-wrapper.active .lang-dropdown-list {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.lang-dropdown-list li {
+  padding: 10px 16px;
+  color: #ddd;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: var(--clock-font);
+}
+.lang-dropdown-list li:hover, .lang-dropdown-list li.active {
+  background: rgba(10, 132, 255, 0.2);
+  color: #fff;
+}
+
+/* ================= 终极修复：多语言排版与溢出 ================= */
+/* 1. 强制时钟与日期保持从左到右 (LTR)，防止阿拉伯语/波斯语导致时间倒转 */
+.clock-display, .time-group, .info-footer {
+  direction: ltr !important;
+}
+
+/* 2. 统一语言下拉列表的对齐方式，全部居中，消除左右乱跳 */
+.lang-dropdown-list li {
+  text-align: center !important;
+  direction: ltr !important;
+}
+
+/* 3. 修复底部“更多地区”按钮溢出问题，强制允许横向滚动且不挤压 */
+.dock-container {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  justify-content: flex-start !important;
+  -webkit-overflow-scrolling: touch; /* 提升手机端滚动体验 */
+}
+.dock-btn {
+  flex-shrink: 0 !important;
+}
+
+/* ================= 终极修复：RTL (从右向左) 语言布局反转错乱 ================= */
+
+/* 1. 强制头部导航栏保持从左到右物理布局，防止语言菜单跑到左边并溢出 */
+.app-header {
+  direction: ltr !important;
+}
+
+/* 2. 强制侧边栏和设置按钮永远固定在屏幕右侧，禁止跑到左边和全屏按钮重叠 */
+html[dir="rtl"] .sidebar-wrapper { 
+  left: auto !important; 
+  right: 0 !important; 
+  transform: translateX(100%) !important; 
+  border-right: none !important; 
+  border-left: 1px solid rgba(255,255,255,0.1) !important; 
+}
+html[dir="rtl"] .sidebar-wrapper.open { 
+  transform: translateX(0) !important; 
+}
+html[dir="rtl"] #settings-btn { 
+  right: auto !important; 
+  left: -75px !important; 
+  box-shadow: -5px 5px 20px rgba(0,0,0,0.5) !important; 
+}
+
+/* 3. 语言下拉菜单在 RTL 模式下，文本从右向左对齐，但物理弹出位置不变 */
+html[dir="rtl"] .lang-dropdown-list {
+  direction: rtl !important;
+}
+
+/* 4. 确保设置面板内部的滑动开关/颜色选择器对齐正常 */
+html[dir="rtl"] .form-group {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+/* RTL (从右到左) 语言系统级适配 (补充) */
+html[dir="rtl"] .header-logo { flex-direction: row-reverse; }
+
+/* ================= 反馈按钮样式 (Feedback) ================= */
+#feedback-btn {
+  position: absolute;
+  left: -75px;
+  bottom: 170px; /* 位于取色器正上方 */
+  width: 54px;
+  height: 54px;
+  font-size: 1.5rem;
+  box-shadow: -5px 5px 20px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none; /* 去除超链接的默认下划线 */
+  margin: 0;
+}
+
+/* 手机端适配：保持等比例缩小和间距 */
+@media (max-width: 768px) {
+  #feedback-btn {
+    left: -60px;
+    bottom: 150px; /* 手机端取色器在 90px，间距 60px，因此设为 150px */
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* RTL 语言排版适配 */
+html[dir="rtl"] #feedback-btn { 
+  right: auto !important; 
+  left: -75px !important; 
+  box-shadow: -5px 5px 20px rgba(0,0,0,0.5) !important; 
+}

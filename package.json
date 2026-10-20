@@ -1,0 +1,53 @@
+{
+  "name": "pudiu-time-desktop",
+  "version": "1.0.0",
+  "description": "Pudiu Time 桌面版 - 翻页时钟 / 视频壁纸 / 数字标牌单机投放系统",
+  "main": "main.js",
+  "author": "Pudiu Team",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "dist": "electron-builder --win",
+    "postinstall": "echo skip"
+  },
+  "devDependencies": {
+    "electron": "latest",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.pudiu.time.desktop",
+    "productName": "PudiuTime",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pudiu Time 桌面版"
+    }
+  }
+}
