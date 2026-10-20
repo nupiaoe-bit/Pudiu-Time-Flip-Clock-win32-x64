@@ -1,6 +1,11 @@
+在线体验：[https://time.pudiu.com](https://time.pudiu.com)
+
+下载：[https://time.pudiu.com/down.html](https://time.pudiu.com/down.html)
+
+
 # Pudiu Time 桌面版
 
-把线上翻页时钟（http://time.pudiu.com/）改造成**一台电脑就能跑的单机系统**：翻页时钟 + 本地视频/图片轮播 + 多时区底座 + 数字标牌投放。
+把线上翻页时钟（http://time.pudiu.com/）一台电脑就能跑的单机系统：翻页时钟 + 本地视频/图片轮播 + 多时区底座 + 数字标牌投放。
 **不需要服务器、不需要后台管理端**，素材和配置全部保存在本机。
 
 ---
@@ -161,3 +166,7 @@ A：默认「关闭时最小化到托盘」，双击托盘图标恢复；托盘�
 | 导入素材后画面没变化 | 导入只入库、不自动投放 | 首次导入或当前无背景素材时，自动投放到背景 |
 
 验证结论（本机实测）：本地 36MB mp4 加载并轮播正常（`muted=false` 有声）、在线壁纸 19 张、语言包 23 种、音源从配置恢复成功。
+
+https://www.youtube.com/watch?v=WLcd7QxVl-o
+
+更多工具：[https://tool.pudiu.com/](https://tool.pudiu.com/)
